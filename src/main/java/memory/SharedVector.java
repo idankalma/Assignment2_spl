@@ -26,6 +26,16 @@ public class SharedVector {
         }
     }
 
+    public void set(int index, double newVal){
+        writeLock();
+        try{
+            vector[index] = newVal;
+        }
+        finally {
+            writeUnlock();
+        }
+    }
+
     public int length() {
         // TODO: return vector length
         return this.vector.length;

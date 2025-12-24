@@ -6,8 +6,9 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="SPLA2" />
+        <module name="Assignment2_SPL" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel target="21" />
   </component>
 </project>
