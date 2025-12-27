@@ -29,7 +29,7 @@ public class TiredExecutor {
 
     public void submit(Runnable task) {
         // TODO
-        TiredThread worker;
+
         synchronized (this) {
             while (idleMinHeap.isEmpty()) {
                 try {
@@ -38,22 +38,29 @@ public class TiredExecutor {
                 }
             }
 
-            worker = idleMinHeap.poll();
+            TiredThread worker = idleMinHeap.poll();
             inFlight.incrementAndGet();
-        }
-        Runnable wrappedTask = () -> {
-            try{
-                task.run();
-            }
-            finally {
-                synchronized (TiredExecutor.this){
-                    idleMinHeap.add(worker);
-                    inFlight.decrementAndGet();
-                    TiredExecutor.this.notifyAll();
+
+            Runnable wrappedTask = () -> {
+                try {
+                    task.run();
+                } finally {
+                    synchronized (TiredExecutor.this) {
+                        idleMinHeap.add(worker);
+                        inFlight.decrementAndGet();
+                        TiredExecutor.this.notifyAll();
+                    }
                 }
+            };
+
+            try {
+                worker.newTask(wrappedTask);
+            } catch (IllegalStateException e) {
+                idleMinHeap.add(worker);
+                inFlight.decrementAndGet();
+                notifyAll();
             }
-        };
-        worker.newTask(wrappedTask);
+        }
     }
 
     public void submitAll(Iterable<Runnable> tasks) {

@@ -18,17 +18,11 @@ public class SharedMatrix {
 
     public void loadRowMajor(double[][] matrix) {
         // TODO: replace internal data with new row-major matrix
-        SharedVector[] vecsRows = new SharedVector[matrix.length];
+        SharedVector[] newVectors = new SharedVector[matrix.length];
         for(int i = 0; i < matrix.length; i++){
-            vecsRows[i] = new SharedVector(matrix[i], VectorOrientation.ROW_MAJOR);
+            newVectors[i] = new SharedVector(matrix[i], VectorOrientation.ROW_MAJOR);
         }
-        acquireAllVectorWriteLocks(vectors);
-        try{
-            this.vectors = vecsRows;
-        }
-        finally {
-            releaseAllVectorWriteLocks(vectors);
-        }
+        this.vectors = newVectors;
     }
 
     public void loadColumnMajor(double[][] matrix) {
@@ -45,13 +39,7 @@ public class SharedMatrix {
             }
             vecsCols[j] = new SharedVector(col, VectorOrientation.COLUMN_MAJOR);
         }
-        acquireAllVectorWriteLocks(vectors);
-        try{
-            this.vectors = vecsCols;
-        }
-        finally {
-            releaseAllVectorWriteLocks(vectors);
-        }
+        this.vectors = vecsCols;
     }
 
     public double[][] readRowMajor() {
@@ -59,24 +47,32 @@ public class SharedMatrix {
         if (vectors.length == 0) {
             return new double[0][0];
         }
-        int cols = vectors[0].length();
-        int rows = vectors.length;
-        double[][] output = new double[rows][cols];
 
-        acquireAllVectorReadLocks(vectors);
-        try {
+        if (getOrientation() == VectorOrientation.ROW_MAJOR) { // matrix is ROW_MAJOR
+            int rows = vectors.length;
+            int cols = vectors[0].length();
+            double[][] output = new double[rows][cols];
+
             for (int i = 0; i < rows; i++) {
                 for (int j = 0; j < cols; j++) {
                     output[i][j] = vectors[i].get(j);
                 }
             }
+            return output;
         }
-        finally{
-                releaseAllVectorReadLocks(vectors);
+        else { // matrix is COLUMN_MAJOR
+            int cols = vectors.length;
+            int rows = vectors[0].length();
+            double[][] output = new double[rows][cols];
+
+            for (int j = 0; j < cols; j++) {
+                for (int i = 0; i < rows; i++) {
+                    output[i][j] = vectors[j].get(i);
+                }
             }
             return output;
         }
-
+    }
     public SharedVector get(int index) {
         // TODO: return vector at index
         return vectors[index];
