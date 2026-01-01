@@ -64,9 +64,6 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
             busy.set(false);
             throw new IllegalStateException("Worker " + id + " is busy");
         }
-        if (isBusy()) {
-            throw new IllegalStateException("Worker " + id + " is busy");
-        }
     }
 
     /**

@@ -62,6 +62,13 @@ public class LinearAlgebraEngine {
         double[][] A = children.get(0).getMatrix();
         double[][] B = (children.size() > 1) ? children.get(1).getMatrix(): null;
 
+        if (type == ComputationNodeType.ADD) {
+            if (A.length != B.length || A[0].length != B[0].length) {
+                throw new IllegalArgumentException("Dimension mismatch in matrix addition");
+            }
+        }
+
+
         if(type == ComputationNodeType.MULTIPLY){
             if(A[0].length != B.length){
                 throw new IllegalArgumentException("Illegal operation: dimensions mismatch");

@@ -28,40 +28,50 @@ public class TiredExecutor {
     }
 
     public void submit(Runnable task) {
-        // TODO
+        if (task == null) {
+            throw new IllegalArgumentException("task cannot be null");
+        }
 
-        synchronized (this) {
-            while (idleMinHeap.isEmpty()) {
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return;
-                }
-            }
+        // Take least-fatigued IDLE worker (blocks if none are idle).
+        final TiredThread worker;
+        try {
+            worker = idleMinHeap.take();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while waiting for an idle worker", e);
+        }
 
-            TiredThread worker = idleMinHeap.poll();
-            inFlight.incrementAndGet();
+        inFlight.incrementAndGet();
 
-            Runnable wrappedTask = () -> {
-                try {
-                    task.run();
-                } finally {
+        Runnable wrapped = () -> {
+            try {
+                task.run();
+            } finally {
+                // return worker to idle heap (fatigue order recomputed dynamically)
+                idleMinHeap.add(worker);
+
+                int left = inFlight.decrementAndGet();
+                if (left == 0) {
                     synchronized (TiredExecutor.this) {
-                        idleMinHeap.add(worker);
-                        inFlight.decrementAndGet();
                         TiredExecutor.this.notifyAll();
                     }
                 }
-            };
-
-            try {
-                worker.newTask(wrappedTask);
-            } catch (IllegalStateException e) {
-                idleMinHeap.add(worker);
-                inFlight.decrementAndGet();
-                notifyAll();
             }
+        };
+
+        try {
+            worker.newTask(wrapped);
+        } catch (IllegalStateException ex) {
+            // Roll back: we didn't actually schedule the task
+            idleMinHeap.add(worker);
+
+            int left = inFlight.decrementAndGet();
+            if (left == 0) {
+                synchronized (this) {
+                    notifyAll();
+                }
+            }
+            throw ex;
         }
     }
 
@@ -70,12 +80,13 @@ public class TiredExecutor {
         for (Runnable r : tasks){
             submit(r);
         }
-        synchronized (this) {
+        synchronized (TiredExecutor.this) {
             while (inFlight.get() > 0) {
                 try {
-                    wait();
+                    TiredExecutor.this.wait();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
+                    return;
                 }
             }
         }

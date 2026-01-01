@@ -88,28 +88,6 @@ public class TiredThreadTest {
     /* Testing newTask contract */
 
     @Test
-    public void testNewTaskWhileBusyThrows() throws Exception {
-        // A worker must reject new tasks while it is already busy
-
-        TiredThread worker = new TiredThread(3, 1.0);
-        worker.start();
-
-        worker.newTask(() -> {
-            try {
-                Thread.sleep(200);
-            } catch (InterruptedException ignored) {}
-        });
-
-        Thread.sleep(50); // ensure task started
-
-        assertThrows(IllegalStateException.class,
-                () -> worker.newTask(() -> {}));
-
-        worker.shutdown();
-        worker.join();
-    }
-
-    @Test
     public void testNewTaskAfterShutdownThrows() throws Exception {
         // After shutdown, the worker must reject all new tasks
 

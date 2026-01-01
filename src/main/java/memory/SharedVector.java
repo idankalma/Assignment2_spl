@@ -219,19 +219,25 @@ public class SharedVector {
                 v.readLock();
             }
 
+            double[] localThis;
             readLock();
+
+            try {
+                localThis = Arrays.copyOf(this.vector, this.vector.length);
+            } finally {
+                readUnlock();
+            }
 
             try {
                 for (int i = 0; i < cols; i++) {
                     double sum = 0;
                     for (int k = 0; k < rows; k++) {
-                        sum = sum + this.vector[k] * rowsVecs[k].vector[i];
+                        sum = sum + localThis[k] * rowsVecs[k].get(i);
                     }
                     output[i] = sum;
                 }
             }
             finally {
-                    readUnlock();
                     for(SharedVector v: rowsVecs) {
                         v.readUnlock();
                     }

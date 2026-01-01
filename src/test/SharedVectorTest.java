@@ -172,8 +172,9 @@ public class SharedVectorTest {
                 {5,6}
         });
 
+        System.out.println(row.get(0)  +  "," + row.get(1));
         row.vecMatMul(m);
-
+        System.out.println(row.get(0)  +  "," + row.get(1));
         assertArrayEquals(
                 new double[]{13,16},
                 new double[]{row.get(0), row.get(1)}
