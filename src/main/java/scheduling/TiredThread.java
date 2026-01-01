@@ -61,6 +61,7 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
             throw new IllegalStateException("Worker" + id + "is shut down");
         }
         if(!handoff.offer(task)){
+            busy.set(false);
             throw new IllegalStateException("Worker " + id + " is busy");
         }
         if (isBusy()) {

@@ -1,5 +1,7 @@
 package memory;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Vector;
 
 public class SharedMatrix {
@@ -44,34 +46,41 @@ public class SharedMatrix {
 
     public double[][] readRowMajor() {
         // TODO: return matrix contents as a row-major double[][]
-        if (vectors.length == 0) {
+        SharedVector[] localVectors = this.vectors.clone();
+
+        if (localVectors.length == 0) {
             return new double[0][0];
         }
+        VectorOrientation localOrientation = localVectors[0].getOrientation();
 
-        if (getOrientation() == VectorOrientation.ROW_MAJOR) { // matrix is ROW_MAJOR
-            int rows = vectors.length;
-            int cols = vectors[0].length();
-            double[][] output = new double[rows][cols];
+        acquireAllVectorReadLocks(localVectors);
 
-            for (int i = 0; i < rows; i++) {
-                for (int j = 0; j < cols; j++) {
-                    output[i][j] = vectors[i].get(j);
-                }
-            }
-            return output;
-        }
-        else { // matrix is COLUMN_MAJOR
-            int cols = vectors.length;
-            int rows = vectors[0].length();
-            double[][] output = new double[rows][cols];
-
-            for (int j = 0; j < cols; j++) {
+        try {
+            if (localOrientation == VectorOrientation.ROW_MAJOR) { // matrix is ROW_MAJOR
+                int rows = localVectors.length;
+                int cols = localVectors[0].length();
+                double[][] output = new double[rows][cols];
                 for (int i = 0; i < rows; i++) {
-                    output[i][j] = vectors[j].get(i);
+                    for (int j = 0; j < cols; j++) {
+                        output[i][j] = localVectors[i].get(j);
+                    }
                 }
+                return output;
+            } else { // matrix is COLUMN_MAJOR
+                int cols = localVectors.length;
+                int rows = localVectors[0].length();
+                double[][] output = new double[rows][cols];
+                for (int j = 0; j < cols; j++) {
+                    for (int i = 0; i < rows; i++) {
+                        output[i][j] = localVectors[j].get(i);
+                    }
+                }
+                return output;
             }
-            return output;
         }
+        finally {
+                releaseAllVectorReadLocks(localVectors);
+            }
     }
     public SharedVector get(int index) {
         // TODO: return vector at index

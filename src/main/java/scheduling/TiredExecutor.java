@@ -35,6 +35,8 @@ public class TiredExecutor {
                 try {
                     wait();
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
                 }
             }
 
@@ -73,6 +75,7 @@ public class TiredExecutor {
                 try {
                     wait();
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
             }
         }
@@ -89,7 +92,7 @@ public class TiredExecutor {
         }
     }
 
-    public synchronized String getWorkerReport() {
+    /*public synchronized String getWorkerReport() {
         StringBuilder sb = new StringBuilder();
         for (TiredThread w : workers) {
             sb.append("Worker ").append(w.getWorkerId())
@@ -100,5 +103,31 @@ public class TiredExecutor {
                     .append("\n");
         }
         return sb.toString();
+    }*/
+
+    public synchronized String getWorkerReport() {
+        // return readable statistics for each worker
+        StringBuilder ret = new StringBuilder();
+        for(TiredThread worker: workers){
+            String report = String.format("Worker %d: Time Used = %d ns, Time Idle = %d ns, Fatigue = %,2f\n",
+                    worker.getWorkerId(),
+                    worker.getTimeUsed(),
+                    worker.getTimeIdle(),
+                    worker.getFatigue());
+            ret.append(report);
+        }
+        double averageFatigue = 0.0;
+        for(TiredThread worker: workers){
+            averageFatigue += worker.getFatigue();
+        }
+        averageFatigue /= workers.length;
+        ret.append(String.format("Average Fatigue: %.2f\n", averageFatigue));
+        double fairness = 0.0;
+        for(TiredThread worker: workers){
+            fairness += Math.pow(worker.getFatigue() - averageFatigue, 2);
+        }
+        ret.append("Fairness value: " + String.format("%.2f\n", fairness));
+        return ret.toString();
     }
+
 }

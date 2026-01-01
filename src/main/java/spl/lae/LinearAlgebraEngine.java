@@ -48,8 +48,8 @@ public class LinearAlgebraEngine {
         ComputationNodeType type = node.getNodeType();
 
         if (type == ComputationNodeType.ADD || type == ComputationNodeType.MULTIPLY){
-            if(children.size() != 2){
-                throw new IllegalArgumentException("Binary operator requires exactly 2 operands");
+            if(children.size() < 2){
+                throw new IllegalArgumentException("Multiply requires at least 2 operands");
             }
         }
 
@@ -62,25 +62,22 @@ public class LinearAlgebraEngine {
         double[][] A = children.get(0).getMatrix();
         double[][] B = (children.size() > 1) ? children.get(1).getMatrix(): null;
 
-        if(type == ComputationNodeType.ADD){
-            if(A.length != B.length || A[0].length != B[0].length){
-                throw new IllegalArgumentException("Illegal operation: dimensions mismatch");
-            }
-        }
-
         if(type == ComputationNodeType.MULTIPLY){
             if(A[0].length != B.length){
                 throw new IllegalArgumentException("Illegal operation: dimensions mismatch");
             }
         }
 
-        leftMatrix.loadRowMajor(A);
+        synchronized (leftMatrix) {
+            leftMatrix.loadRowMajor(A);
+        }
 
         if (B != null) {
-            if (type == ComputationNodeType.MULTIPLY) {
-                rightMatrix.loadColumnMajor(B);
-            } else {
-                rightMatrix.loadRowMajor(B);
+            synchronized (rightMatrix) {
+                if (type == ComputationNodeType.MULTIPLY)
+                    rightMatrix.loadColumnMajor(B);
+                else
+                    rightMatrix.loadRowMajor(B);
             }
         }
 
@@ -105,7 +102,9 @@ public class LinearAlgebraEngine {
 
         executor.submitAll(tasks);
 
-        node.resolve(leftMatrix.readRowMajor());
+        synchronized (leftMatrix) {
+            node.resolve(leftMatrix.readRowMajor());
+        }
     }
 
     public List<Runnable> createAddTasks() {

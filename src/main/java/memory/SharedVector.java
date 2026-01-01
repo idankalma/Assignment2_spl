@@ -1,5 +1,7 @@
 package memory;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Vector;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -106,16 +108,24 @@ public class SharedVector {
         if (this.orientation != other.orientation)
             throw new IllegalArgumentException("Vector orientation mismatch");
 
-        writeLock();
-        other.readLock();
+        SharedVector first = this;
+        SharedVector second = other;
+
+        if (System.identityHashCode(first) > System.identityHashCode(second)) {
+            first = other;
+            second = this;
+        }
+
+        first.writeLock();
+        second.readLock();
         try{
             for(int i = 0; i < length(); i++){
                 this.vector[i] = this.vector[i] + other.vector[i];
             }
         }
         finally {
-            writeUnlock();
-            other.readUnlock();
+            first.writeUnlock();
+            second.readUnlock();
         }
     }
 
@@ -145,16 +155,21 @@ public class SharedVector {
         if (this.length() != other.length())
             throw new IllegalArgumentException("Vector length mismatch");
 
-        VectorOrientation rowMajor = VectorOrientation.ROW_MAJOR;
-        VectorOrientation columnMajor = VectorOrientation.COLUMN_MAJOR;
-
         if(this.orientation == null || other.orientation == null)
             throw new IllegalArgumentException("orientation cannot be null");
-        if (this.orientation != rowMajor || other.orientation != columnMajor)
+        if (this.orientation != VectorOrientation.ROW_MAJOR || other.orientation != VectorOrientation.COLUMN_MAJOR)
             throw new IllegalArgumentException("Dot product requires row * column");
 
-        readLock();
-        other.readLock();
+        SharedVector first = this;
+        SharedVector second = other;
+
+        if (System.identityHashCode(first) > System.identityHashCode(second)) {
+            first = other;
+            second = this;
+        }
+
+        first.readLock();
+        second.readLock();
         try{
             double sum = 0;
             for(int i = 0; i < length(); i++){
@@ -163,8 +178,8 @@ public class SharedVector {
             return sum;
         }
         finally {
-            readUnlock();
-            other.readUnlock();
+            first.readUnlock();
+            second.readUnlock();
         }
     }
 
@@ -195,9 +210,13 @@ public class SharedVector {
             }
             double[] output = new double[cols];
 
-            SharedVector[] vecsToLock = new SharedVector[rows];
-            for (int f = 0; f < rows; f++){
-                vecsToLock[f] = matrix.get(f);
+            SharedVector[] rowsVecs = new SharedVector[rows];
+            for (int i = 0; i < rows; i++){
+                rowsVecs[i] = matrix.get(i);
+            }
+
+            for(SharedVector v: rowsVecs) {
+                v.readLock();
             }
 
             readLock();
@@ -206,13 +225,16 @@ public class SharedVector {
                 for (int i = 0; i < cols; i++) {
                     double sum = 0;
                     for (int k = 0; k < rows; k++) {
-                        sum = sum + this.vector[k] * matrix.get(k).get(i);
+                        sum = sum + this.vector[k] * rowsVecs[k].vector[i];
                     }
                     output[i] = sum;
                 }
             }
             finally {
                     readUnlock();
+                    for(SharedVector v: rowsVecs) {
+                        v.readUnlock();
+                    }
                 }
 
 
@@ -228,7 +250,7 @@ public class SharedVector {
         /*
          *implementation of matrix as column-major
          */
-        else if(matrix.getOrientation() == VectorOrientation.COLUMN_MAJOR){
+        else {
             int cols = matrix.length();
             int rows = matrix.get(0).length();
 
@@ -237,9 +259,15 @@ public class SharedVector {
 
             double[] output = new double[cols];
 
-            for(int i = 0; i < cols; i++){
-                SharedVector vectorColumn = matrix.get(i);
-                output[i] = this.dot(vectorColumn);
+            readLock();
+            try {
+                for(int i = 0; i < cols; i++){
+                    SharedVector vectorColumn = matrix.get(i);
+                    output[i] = this.dot(vectorColumn);
+                }
+            }
+            finally {
+                readUnlock();
             }
 
             writeLock();

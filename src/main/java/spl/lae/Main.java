@@ -37,12 +37,16 @@ public class Main {
             ComputationNode output = engine.run(root);
 
             OutputWriter.write(output.getMatrix(), outputPath);
+
+            System.out.println(engine.getWorkerReport());
         }
         catch (ParseException e){ // if the input is not valid
             OutputWriter.write(e.getMessage(), outputPath);
+            System.exit(1);
         }
         catch (IllegalArgumentException | IllegalStateException e){ // if the calculation is not valid
             OutputWriter.write(e.getMessage(), outputPath);
+            System.exit(1);
         }
 
     }
