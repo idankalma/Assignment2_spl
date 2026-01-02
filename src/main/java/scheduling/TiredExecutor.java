@@ -31,8 +31,6 @@ public class TiredExecutor {
         if (task == null) {
             throw new IllegalArgumentException("task cannot be null");
         }
-
-        // Take least-fatigued IDLE worker (blocks if none are idle).
         final TiredThread worker;
         try {
             worker = idleMinHeap.take();
@@ -47,7 +45,6 @@ public class TiredExecutor {
             try {
                 task.run();
             } finally {
-                // return worker to idle heap (fatigue order recomputed dynamically)
                 idleMinHeap.add(worker);
 
                 int left = inFlight.decrementAndGet();

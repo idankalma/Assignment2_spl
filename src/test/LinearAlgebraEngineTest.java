@@ -17,9 +17,7 @@ public class LinearAlgebraEngineTest {
         engine = new LinearAlgebraEngine(4);
     }
 
-    /* =========================
-       ADD
-       ========================= */
+    /* Add: */
 
     @Test
     void testAddMatrices() {
@@ -50,9 +48,7 @@ public class LinearAlgebraEngineTest {
         assertThrows(IllegalArgumentException.class, () -> engine.run(addNode));
     }
 
-    /* =========================
-       NEGATE
-       ========================= */
+    /* Negate: */
 
     @Test
     void testNegateMatrix() {
@@ -67,9 +63,7 @@ public class LinearAlgebraEngineTest {
         assertArrayEquals(new double[]{3, -4}, out[1]);
     }
 
-    /* =========================
-       MULTIPLY
-       ========================= */
+    /* Multiply: */
 
     @Test
     void testMultiplyMatrices() {
@@ -87,9 +81,7 @@ public class LinearAlgebraEngineTest {
         assertArrayEquals(new double[]{43, 50}, out[1]);
     }
 
-    /* =========================
-       TRANSPOSE
-       ========================= */
+    /* Transpose: */
 
     @Test
     void testTransposeMatrix() {
@@ -108,9 +100,7 @@ public class LinearAlgebraEngineTest {
         assertArrayEquals(new double[]{3, 6}, out[2]);
     }
 
-    /* =========================
-       COMPOSITION / TREE
-       ========================= */
+    /* Composition tree: */
 
     @Test
     void testNestedComputationTree() {
@@ -129,9 +119,7 @@ public class LinearAlgebraEngineTest {
         assertArrayEquals(new double[]{-10, -12}, out[1]);
     }
 
-    /* =========================
-       CONCURRENCY SANITY
-       ========================= */
+    /* Concurrency sanity: */
 
     @Test
     void testLargeParallelAddition() {
@@ -156,9 +144,7 @@ public class LinearAlgebraEngineTest {
                 assertEquals(i + j, out[i][j]);
     }
 
-    /* =========================
-       WORKER REPORT
-       ========================= */
+    /* Worker report */
 
     @Test
     void testWorkerReportNotEmpty() {
