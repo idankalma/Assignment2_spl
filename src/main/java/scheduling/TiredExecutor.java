@@ -103,42 +103,27 @@ public class TiredExecutor {
         }
     }
 
-    /*public synchronized String getWorkerReport() {
-        StringBuilder sb = new StringBuilder();
-        for (TiredThread w : workers) {
-            sb.append("Worker ").append(w.getWorkerId())
-                    .append(": busy=").append(w.isBusy())
-                    .append(", timeUsed=").append(w.getTimeUsed())
-                    .append(", timeIdle=").append(w.getTimeIdle())
-                    .append(", fatigue=").append(String.format("%.2f", w.getFatigue()))
-                    .append("\n");
-        }
-        return sb.toString();
-    }*/
 
     public synchronized String getWorkerReport() {
-        // return readable statistics for each worker
         StringBuilder ret = new StringBuilder();
-        for(TiredThread worker: workers){
-            String report = String.format("Worker %d: Time Used = %d ns, Time Idle = %d ns, Fatigue = %,2f\n",
+
+        for (TiredThread worker : workers) {
+
+            double fatigueFactor = worker.getFatigue();
+
+            double fatigue = fatigueFactor * worker.getTimeUsed();
+
+            ret.append(String.format(
+                    "Worker %d: Time Used = %d ns, Time Idle = %d ns, Fatigue = %.2f (Fatigue = %.5f × %d)\n",
                     worker.getWorkerId(),
                     worker.getTimeUsed(),
                     worker.getTimeIdle(),
-                    worker.getFatigue());
-            ret.append(report);
+                    fatigue,
+                    fatigueFactor,
+                    worker.getTimeUsed()
+            ));
         }
-        double averageFatigue = 0.0;
-        for(TiredThread worker: workers){
-            averageFatigue += worker.getFatigue();
-        }
-        averageFatigue /= workers.length;
-        ret.append(String.format("Average Fatigue: %.2f\n", averageFatigue));
-        double fairness = 0.0;
-        for(TiredThread worker: workers){
-            fairness += Math.pow(worker.getFatigue() - averageFatigue, 2);
-        }
-        ret.append("Fairness value: " + String.format("%.2f\n", fairness));
+
         return ret.toString();
     }
-
 }
